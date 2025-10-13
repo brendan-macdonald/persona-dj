@@ -64,7 +64,7 @@ async function search(
 
 async function recommendations(token: string, params: Record<string, any>) {
   const qs = new URLSearchParams(params).toString();
-  return sFetch(token, `/reccomendations?${qs}`);
+  return sFetch(token, `/recommendations?${qs}`);
 }
 
 /**
@@ -93,6 +93,8 @@ async function createPlaylist(
  * @param token - Spotify access token
  * @param playlistId - Playlist ID
  * @param uris - Array of track URIs
+ * Uses @function sFetch for the API call
+ * Sends post request with JSON body
  */
 
 async function addTracks(token: string, playlistId: string, uris: string[]) {
@@ -101,3 +103,5 @@ async function addTracks(token: string, playlistId: string, uris: string[]) {
     body: JSON.stringify({ uris }),
   });
 }
+
+export { sFetch, search, recommendations, createPlaylist, addTracks };
