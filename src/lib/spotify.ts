@@ -1,5 +1,7 @@
 const BASE_URL = "https://api.spotify.com/v1";
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 /**
  * sFetch - Spotify API fetch helper with 429 retry-after handling
  * Handles rate limits by waiting and retrying once

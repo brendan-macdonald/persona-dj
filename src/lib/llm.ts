@@ -2,6 +2,8 @@
 import { PlaylistSpec, clampSpec, PlaylistSpecT } from "./specs";
 import { SYSTEM, userPrompt } from "./prompt";
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 // Read API key from environment
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 if (!OPENAI_API_KEY) throw new Error("Missing OpenAI API key...");

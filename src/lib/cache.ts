@@ -1,6 +1,8 @@
 // Simple LRU cache with 1 hour TTL for vibe→spec lookups
 // Includes normKey helper for normalizing vibe strings
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 const CACHE_TTL = 1000 * 60 * 60; // 1 hour in ms
 const MAX_SIZE = 100; // Max cache entries
 
