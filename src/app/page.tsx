@@ -21,13 +21,16 @@ export default function Home() {
     setSpec(null);
     setTracks([]);
     setSelectedUris([]);
+
     try {
       const res = await fetch("/api/translate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ vibe }),
       });
+
       const data = await res.json();
+
       if (res.ok && data.spec) {
         setSpec(data.spec);
       } else {
@@ -47,13 +50,16 @@ export default function Home() {
     setError("");
     setTracks([]);
     setSelectedUris([]);
+
     try {
       const res = await fetch("/api/recommend", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ spec: nextSpec }),
       });
+
       const data = await res.json();
+
       if (res.ok && data.tracks) {
         setTracks(data.tracks);
       } else {

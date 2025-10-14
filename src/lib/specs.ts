@@ -16,9 +16,9 @@ const PlaylistSpec = z.object({
     }),
   energy: z.number().min(0).max(1),
   danceability: z.number().min(0).max(1),
-  valence: z.number().min(0).max(1).optional(),
+  valence: z.number().min(0).max(1),
   seedArtists: z.array(z.string()).optional(),
-  seedTracks: z.array(z.string()),
+  seedTracks: z.array(z.string()).optional(),
   notes: z.string().optional(),
 });
 
@@ -40,13 +40,10 @@ function clampSpec(input: unknown): PlaylistSpecT {
     },
     energy: Math.max(0, Math.min(1, parsed.energy)),
     danceability: Math.max(0, Math.min(1, parsed.danceability)),
-    valence:
-      parsed.valence !== undefined
-        ? Math.max(0, Math.min(1, parsed.valence))
-        : undefined,
+    valence: Math.max(0, Math.min(1, parsed.valence)), // Now always defined
     genres: parsed.genres.slice(0, 5),
-    seedArtists: parsed.seedArtists?.slice(0) ?? undefined,
-    seedTracks: parsed.seedTracks.slice(0),
+    seedArtists: parsed.seedArtists?.slice(0),
+    seedTracks: parsed.seedTracks?.slice(0), // Now optional
     notes: parsed.notes,
   };
 }

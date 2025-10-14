@@ -74,23 +74,41 @@ export default function SpecPreview({ value, onChange }: SpecPreviewProps) {
               type="range"
               min={40}
               max={200}
-              value={value.tempoMin}
-              onChange={(e) => updateSpec({ tempoMin: Number(e.target.value) })}
+              value={value.tempoRange.min}
+              onChange={(e) =>
+                updateSpec({
+                  tempoRange: {
+                    ...value.tempoRange,
+                    min: Number(e.target.value),
+                  },
+                })
+              }
               className="w-full"
             />
-            <span className="text-sm text-gray-600">{value.tempoMin} BPM</span>
+            <span className="text-sm text-gray-600">
+              {value.tempoRange.min} BPM
+            </span>
           </div>
           <span className="text-gray-400">–</span>
           <div className="flex-1">
             <input
               type="range"
-              min={value.tempoMin}
+              min={value.tempoRange.min}
               max={200}
-              value={value.tempoMax}
-              onChange={(e) => updateSpec({ tempoMax: Number(e.target.value) })}
+              value={value.tempoRange.max}
+              onChange={(e) =>
+                updateSpec({
+                  tempoRange: {
+                    ...value.tempoRange,
+                    max: Number(e.target.value),
+                  },
+                })
+              }
               className="w-full"
             />
-            <span className="text-sm text-gray-600">{value.tempoMax} BPM</span>
+            <span className="text-sm text-gray-600">
+              {value.tempoRange.max} BPM
+            </span>
           </div>
         </div>
       </div>

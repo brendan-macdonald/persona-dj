@@ -14,6 +14,7 @@ const prisma = new PrismaClient();
  *   - Returns spec as JSON, handles errors.
  */
 export async function POST(req: Request): Promise<Response> {
+  debugger; // This will ALWAYS pause execution when debugger is attached
   try {
     const { vibe } = await req.json();
     if (!vibe || typeof vibe !== "string") {

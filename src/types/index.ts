@@ -7,11 +7,16 @@
  */
 export interface PlaylistSpec {
   genres: string[];
-  tempoMin: number;
-  tempoMax: number;
+  tempoRange: {
+    min: number;
+    max: number;
+  };
   energy: number;
   danceability: number;
   valence: number;
+  seedArtists?: string[];
+  seedTracks?: string[];
+  notes?: string;
 }
 
 /**
