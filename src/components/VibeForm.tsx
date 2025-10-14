@@ -1,15 +1,12 @@
 "use client";
 import React, { useState } from "react";
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 /**
  * @component VibeForm
  * Client component for translating a vibe description to a playlist spec.
  *   - Textarea for custom vibe input
  *   - Preset buttons for quick selection
- *   - "Translate" button calls /api/translate
- *   - Displays pretty-printed JSON of returned spec
+ *   - "Translate" button triggers onTranslate callback
  */
 
 // Preset vibe descriptions for quick selection
@@ -20,83 +17,75 @@ const presets = [
   "focus study session",
 ];
 
-export default function VibeForm() {
-  // State for vibe input, returned spec, loading, and error
+interface VibeFormProps {
+  onTranslate: (vibe: string) => void;
+  loading?: boolean;
+  error?: string;
+}
+
+export default function VibeForm({
+  onTranslate,
+  loading = false,
+  error = "",
+}: VibeFormProps) {
+  // State for vibe input only
   const [vibe, setVibe] = useState("");
-  const [spec, setSpec] = useState<any>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
 
   /**
-   * Calls /api/translate with the current vibe
-   * Sets loading, handles errors, and updates spec state
+   * Trigger the parent's translate handler
    */
-  async function handleTranslate() {
-    setLoading(true);
-    setError("");
-    setSpec(null);
-    try {
-      // POST vibe to API
-      const res = await fetch("/api/translate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ vibe }),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        // Update spec with result
-        setSpec(data.spec);
-      } else {
-        setError(data.error || "Unknown error");
-      }
-    } catch (e: any) {
-      setError(String(e));
-    } finally {
-      setLoading(false);
+  function handleTranslate() {
+    if (vibe.trim()) {
+      onTranslate(vibe);
     }
   }
 
   return (
-    <div className="max-w-lg mx-auto p-6 bg-white rounded shadow">
+    <div className="p-6 bg-white rounded-lg shadow-lg">
       {/* Title */}
-      <h2 className="text-xl font-bold mb-4">Vibe to Playlist Spec</h2>
+      <h2 className="text-xl font-bold mb-4 text-gray-900">
+        Describe Your Vibe
+      </h2>
       {/* Vibe input textarea */}
       <textarea
-        className="w-full p-2 border rounded mb-2"
-        rows={3}
+        className="w-full p-3 border border-gray-300 rounded-lg mb-3 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent resize-none text-gray-900 placeholder-gray-400"
+        rows={4}
         value={vibe}
         onChange={(e) => setVibe(e.target.value)}
-        placeholder="Describe your vibe..."
+        placeholder="Describe your vibe... (e.g., 'upbeat party music' or 'relaxing acoustic vibes')"
       />
       {/* Preset vibe buttons */}
-      <div className="flex gap-2 mb-2">
-        {presets.map((preset) => (
-          <button
-            key={preset}
-            className="px-3 py-1 bg-blue-100 rounded hover:bg-blue-200"
-            onClick={() => setVibe(preset)}
-            type="button"
-          >
-            {preset}
-          </button>
-        ))}
+      <div className="mb-4">
+        <div className="text-sm font-semibold text-gray-700 mb-2">
+          Quick Presets:
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {presets.map((preset) => (
+            <button
+              key={preset}
+              className="px-3 py-1.5 text-sm bg-white text-blue-600 border border-blue-300 rounded-lg hover:bg-blue-50 hover:border-blue-400 transition-colors"
+              onClick={() => setVibe(preset)}
+              type="button"
+            >
+              {preset}
+            </button>
+          ))}
+        </div>
       </div>
       {/* Translate button */}
       <button
-        className="w-full py-2 bg-blue-600 text-white rounded font-semibold"
+        className="w-full py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed transition-colors shadow-sm"
         onClick={handleTranslate}
-        disabled={loading || !vibe}
+        disabled={loading || !vibe.trim()}
         type="button"
       >
-        {loading ? "Translating..." : "Translate"}
+        {loading ? "Translating..." : "Translate to Playlist"}
       </button>
       {/* Error message */}
-      {error && <div className="mt-4 text-red-600">Error: {error}</div>}
-      {/* Pretty-printed spec output */}
-      {spec && (
-        <pre className="mt-4 p-2 bg-gray-100 rounded text-sm overflow-x-auto">
-          {JSON.stringify(spec, null, 2)}
-        </pre>
+      {error && (
+        <div className="mt-4 p-3 bg-red-50 border border-red-300 text-red-700 rounded-lg text-sm">
+          {error}
+        </div>
       )}
     </div>
   );
