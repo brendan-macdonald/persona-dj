@@ -1,76 +1,106 @@
 "use client";
 
 import { useState } from "react";
-
-const PRESETS = [
-  "Deep Focus",
-  "Sunset Drive",
-  "Warehouse Techno",
-  "Morning Chill",
-];
+import VibeForm from "../components/VibeForm";
+import SpecPreview from "../components/SpecPreview";
+import TrackList from "../components/TrackList";
 
 export default function Home() {
-  // State for the textarea and JSON preview
-  const [vibe, setVibe] = useState("");
-  const [jsonPreview, setJsonPreview] = useState(null);
+  // State for spec, tracks, selected uris, loading, error
+  const [spec, setSpec] = useState<any>(null);
+  const [tracks, setTracks] = useState<any[]>([]);
+  const [selectedUris, setSelectedUris] = useState<string[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  // Handler for preset buttons
-  function handlePreset(preset: string) {
-    setVibe(preset);
+  // Handle VibeForm translation: set spec from child
+  async function handleVibeTranslate(vibe: string) {
+    setLoading(true);
+    setError("");
+    setSpec(null);
+    setTracks([]);
+    setSelectedUris([]);
+    try {
+      const res = await fetch("/api/translate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ vibe }),
+      });
+      const data = await res.json();
+      if (res.ok && data.spec) {
+        setSpec(data.spec);
+      } else {
+        setError(data.error || "Failed to translate vibe");
+      }
+    } catch (e: any) {
+      setError(String(e));
+    } finally {
+      setLoading(false);
+    }
   }
 
-  // Handler for Translate button (stub)
-  function handleTranslate() {
-    // Stub: just show a fake JSON preview
-    setJsonPreview({
-      vibe,
-      playlist: ["Track 1", "Track 2", "Track 3"],
-      mood: "Stubbed mood",
-    });
+  // Handle SpecPreview change: call /api/recommend
+  async function handleSpecChange(nextSpec: any) {
+    setSpec(nextSpec);
+    setLoading(true);
+    setError("");
+    setTracks([]);
+    setSelectedUris([]);
+    try {
+      const res = await fetch("/api/recommend", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ spec: nextSpec }),
+      });
+      const data = await res.json();
+      if (res.ok && data.tracks) {
+        setTracks(data.tracks);
+      } else {
+        setError(data.error || "Failed to get recommendations");
+      }
+    } catch (e: any) {
+      setError(String(e));
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // Handle track selection change
+  function handleSelectionChange(uris: string[]) {
+    setSelectedUris(uris);
   }
 
   return (
     <div className="flex flex-col md:flex-row gap-8 min-h-[80vh] w-full max-w-4xl mx-auto py-12 px-4">
-      {/* Left panel: Input */}
+      {/* Left panel: VibeForm for vibe input and translation */}
       <section className="flex-1 flex flex-col gap-6">
-        <label htmlFor="vibe" className="text-lg font-semibold mb-2">
-          Enter your vibe…
-        </label>
-        <textarea
-          id="vibe"
-          className="w-full min-h-[100px] rounded-lg border border-gray-700 bg-gray-900 text-white p-3 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
-          value={vibe}
-          onChange={(e) => setVibe(e.target.value)}
-          placeholder="Describe your mood, genre, or energy…"
+        <VibeForm
+          // Pass callback to handle translation and set spec
+          onTranslate={handleVibeTranslate}
         />
-        <div className="flex flex-wrap gap-2">
-          {PRESETS.map((preset) => (
-            <button
-              key={preset}
-              type="button"
-              className="bg-gray-800 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition font-medium"
-              onClick={() => handlePreset(preset)}
-            >
-              {preset}
-            </button>
-          ))}
-        </div>
-        <button
-          type="button"
-          className="mt-4 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold transition"
-          onClick={handleTranslate}
-        >
-          Translate
-        </button>
+        {/* SpecPreview panel, shown after spec is set */}
+        {spec && <SpecPreview value={spec} onChange={handleSpecChange} />}
       </section>
-      {/* Right panel: JSON Preview */}
+      {/* Right panel: TrackList and states */}
       <aside className="flex-1 bg-gray-950 border border-gray-800 rounded-lg p-6 overflow-auto min-h-[200px]">
-        <h2 className="text-lg font-semibold mb-4">JSON Preview</h2>
-        <pre className="text-sm text-green-400 whitespace-pre-wrap">
-          {jsonPreview
-            ? JSON.stringify(jsonPreview, null, 2)
-            : "// Your playlist JSON will appear here"}
-        </pre>
+        <h2 className="text-lg font-semibold mb-4">Tracks</h2>
+        {error && <div className="text-red-500 mb-4">Error: {error}</div>}
+        {loading && <div className="text-blue-400 mb-4">Loading…</div>}
+        {tracks.length > 0 && (
+          <TrackList
+            tracks={tracks}
+            selectedUris={selectedUris}
+            onSelectionChange={handleSelectionChange}
+          />
+        )}
+        {!loading && !error && tracks.length === 0 && (
+          <pre className="text-sm text-green-400 whitespace-pre-wrap">
+            {/* Show spec JSON if available, else placeholder */}
+            {spec
+              ? JSON.stringify(spec, null, 2)
+              : "// Your playlist JSON will appear here"}
+          </pre>
+        )}
       </aside>
     </div>
   );
