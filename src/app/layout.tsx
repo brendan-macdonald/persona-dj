@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import AuthProvider from "../components/AuthProvider";
+import LoginButton from "../components/LoginButton";
 
 // Font setup (Next.js font optimization)
 const geistSans = Geist({
@@ -30,18 +32,23 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} bg-gray-950 text-white min-h-screen antialiased`}
       >
-        {/* Top navigation bar */}
-        <nav className="w-full py-4 px-6 bg-gray-900 border-b border-gray-800">
-          <div className="max-w-4xl mx-auto flex items-center">
-            <span className="text-xl font-bold tracking-tight">Persona DJ</span>
-          </div>
-        </nav>
-        {/* Centered main container */}
-        <main className="flex flex-col items-center justify-center min-h-[80vh] max-w-4xl mx-auto px-4 py-8">
-          {children}
-        </main>
-        {/* Toasts placeholder */}
-        <div id="toast-root" />
+        <AuthProvider>
+          {/* Top navigation bar */}
+          <nav className="w-full py-4 px-6 bg-gray-900 border-b border-gray-800">
+            <div className="max-w-6xl mx-auto flex items-center justify-between">
+              <span className="text-xl font-bold tracking-tight">
+                Persona DJ
+              </span>
+              <LoginButton />
+            </div>
+          </nav>
+          {/* Centered main container */}
+          <main className="flex flex-col items-center justify-center min-h-[80vh] max-w-4xl mx-auto px-4 py-8">
+            {children}
+          </main>
+          {/* Toasts placeholder */}
+          <div id="toast-root" />
+        </AuthProvider>
       </body>
     </html>
   );

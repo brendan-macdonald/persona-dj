@@ -17,7 +17,7 @@ export const authOptions = {
       authorization: {
         params: {
           scope:
-            "user-read-email playlist-modify-private playlist-modify-public",
+            "user-read-email playlist-modify-private playlist-modify-public user-top-read",
         },
       },
     }),
@@ -46,6 +46,8 @@ export const authOptions = {
       return session;
     },
   },
+  secret: process.env.NEXTAUTH_SECRET,
+  useSecureCookies: false,
 };
 
 //NextAuth GET handler for API route
