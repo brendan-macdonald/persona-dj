@@ -9,24 +9,26 @@ import { PlaylistSpec, Track } from "../types";
 export default function Home() {
   // State for spec, tracks, selected uris, loading, error
   const [spec, setSpec] = useState<PlaylistSpec | null>(null);
+  const [vibe, setVibe] = useState<string>(""); // ADD THIS LINE
   const [tracks, setTracks] = useState<Track[]>([]);
   const [selectedUris, setSelectedUris] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   // Handle VibeForm translation: set spec from child
-  async function handleVibeTranslate(vibe: string) {
+  async function handleVibeTranslate(vibeInput: string) {
     setLoading(true);
     setError("");
     setSpec(null);
     setTracks([]);
     setSelectedUris([]);
+    setVibe(vibeInput);
 
     try {
       const res = await fetch("/api/translate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ vibe }),
+        body: JSON.stringify({ vibe: vibeInput }),
       });
 
       const data = await res.json();
@@ -43,7 +45,7 @@ export default function Home() {
     }
   }
 
-  // Handle SpecPreview change: call /api/recommend
+  // Handle SpecPreview change: call /api/discover
   async function handleSpecChange(nextSpec: PlaylistSpec) {
     setSpec(nextSpec);
     setLoading(true);
@@ -52,10 +54,10 @@ export default function Home() {
     setSelectedUris([]);
 
     try {
-      const res = await fetch("/api/recommend", {
+      const res = await fetch("/api/discover", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ spec: nextSpec }),
+        body: JSON.stringify({ spec: nextSpec, vibe: vibe }),
       });
 
       const data = await res.json();

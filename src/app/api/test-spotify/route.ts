@@ -96,6 +96,43 @@ export async function GET() {
     results.availableGenreSeeds = { error: String(e) };
   }
 
+  // Test 6: Get audio features (check if deprecated endpoint still works)
+  try {
+    // Using a known track ID: "11dFghVXANMlKmJXsNCbNl" (example from docs)
+    const audioFeaturesRes = await fetch(
+      "https://api.spotify.com/v1/audio-features/11dFghVXANMlKmJXsNCbNl",
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
+    results.audioFeatures = {
+      status: audioFeaturesRes.status,
+      ok: audioFeaturesRes.ok,
+      data: audioFeaturesRes.ok
+        ? await audioFeaturesRes.json()
+        : await audioFeaturesRes.text(),
+    };
+  } catch (e) {
+    results.audioFeatures = { error: String(e) };
+  }
+
+  // Test 7: Get audio features for multiple tracks (batch)
+  try {
+    const batchRes = await fetch(
+      "https://api.spotify.com/v1/audio-features?ids=11dFghVXANMlKmJXsNCbNl,7ouMYWpwJ422jRcDASZB7P",
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
+    results.audioFeaturesBatch = {
+      status: batchRes.status,
+      ok: batchRes.ok,
+      data: batchRes.ok ? await batchRes.json() : await batchRes.text(),
+    };
+  } catch (e) {
+    results.audioFeaturesBatch = { error: String(e) };
+  }
+
   return Response.json({
     message: "Spotify API Access Test Results",
     tokenPresent: !!token,

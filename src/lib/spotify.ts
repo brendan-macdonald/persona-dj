@@ -20,15 +20,20 @@ async function sFetch(
     "Content-Type": "application/json",
     ...(init?.headers || {}),
   };
-
-  for (let attempt = 0; attempt < 2; attempt++) {
+  for (let i = 0; i < 2; i++) {
     const res = await fetch(url, { ...init, headers });
     if (res.status === 429) {
-      const retryAfter = parseInt(res.headers.get("Retry-After") || "1", 10);
-      await new Promise((r) => setTimeout(r, retryAfter * 1000));
+      const retry = parseInt(res.headers.get("Retry-After") || "1", 10);
+      console.log(`⏳ Rate limited, retrying in ${retry}s`);
+      await new Promise((r) => setTimeout(r, retry * 1000));
       continue;
     }
-    if (!res.ok) throw new Error(`Spotify API error: ${res.status}`);
+    if (!res.ok) {
+      const errorBody = await res.text();
+      console.error(`❌ Spotify API Error ${res.status}:`, errorBody);
+      console.error(`   URL: ${url}`);
+      throw new Error(`Spotify API error: ${res.status}`);
+    }
     return await res.json();
   }
   throw new Error("Spotify API rate limit exceeded");
@@ -57,17 +62,17 @@ async function search(
 }
 
 /**
- * recommendations - Get track recommendations
- * @param token - Spotify access token
- * @param params - Query params object
- * @constant qs - converts params to query string
- * Uses @function sFetch for the API call
+ * DEPRECATED: Spotify Recommendations API
+ * As of Nov 27, 2024, new apps cannot access /recommendations endpoint
+ * See: https://developer.spotify.com/blog/2024-11-27-changes-to-the-web-api
+ *
+ * TODO (Option 2): Replace with search-based recommendation logic
+ * Strategy: Use /search endpoint with filters:
+ *   - Search by genre
+ *   - Filter by artist if specified
+ *   - Combine multiple search queries
+ *   - Rank/deduplicate results
  */
-
-async function recommendations(token: string, params: Record<string, any>) {
-  const qs = new URLSearchParams(params).toString();
-  return sFetch(token, `/recommendations?${qs}`);
-}
 
 /**
  * createPlaylist - Create a new playlist for a user
@@ -106,4 +111,4 @@ async function addTracks(token: string, playlistId: string, uris: string[]) {
   });
 }
 
-export { sFetch, search, recommendations, createPlaylist, addTracks };
+export { sFetch, search, createPlaylist, addTracks };

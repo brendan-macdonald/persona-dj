@@ -29,3 +29,10 @@ export interface Track {
   preview_url?: string;
   uri: string;
 }
+
+export interface SearchStrategy {
+  searchKeywords: string[];
+  genrePriority: string[];
+  yearRange: string | null;
+  rationale: string;
+}
