@@ -1,8 +1,10 @@
 // translate API route
 // POST {vibe} → returns {spec}
-import { normKey, getCache, setCache } from "@/lib/cache"; // LRU cache helper functions
-import { vibeToSpec } from "@/lib/llm"; // llm spec generator
+import { normKey, getCache, setCache } from "@/lib/cache";
+import { vibeToSpec } from "@/lib/llm";
 import { PrismaClient } from "@prisma/client";
+import { getServerSession } from "next-auth";
+import { authOptions } from "../auth/[...nextauth]/route";
 
 const prisma = new PrismaClient();
 
@@ -23,23 +25,56 @@ export async function POST(req: Request): Promise<Response> {
       );
     }
 
+    // Get session for user identification
+    const session = await getServerSession(authOptions);
+    const spotifyId = session?.user?.spotifyId;
+
     const key = normKey(vibe);
     let spec = getCache(key);
+    let vibeId = null;
 
     if (!spec) {
       spec = await vibeToSpec(vibe);
       setCache(key, spec);
-      await prisma.vibe.create({
+
+      // Create or find user first
+      let user = null;
+      if (spotifyId) {
+        // Try to find existing user
+        user = await prisma.user.findUnique({
+          where: { providerId: spotifyId },
+        });
+
+        // Create if doesn't exist
+        if (!user) {
+          user = await prisma.user.create({
+            data: { providerId: spotifyId },
+          });
+        }
+      }
+
+      // Save vibe with userId link
+      const vibeRecord = await prisma.vibe.create({
         data: {
           inputText: vibe,
           normalizedKey: key,
           specJson: spec,
           tracks: [],
+          userId: user?.id || null,
         },
       });
+
+      vibeId = vibeRecord.id;
+    } else {
+      // Cache hit - try to find existing vibe ID
+      const existingVibe = await prisma.vibe.findFirst({
+        where: { normalizedKey: key },
+        select: { id: true },
+      });
+      vibeId = existingVibe?.id || null;
     }
 
-    return Response.json({ spec });
+    return Response.json({ spec, vibeId });
   } catch (e) {
     return Response.json(
       { error: "Server error", details: String(e) },

@@ -10,20 +10,37 @@ generator client {
 
 // User model
 model User {
-	id         String   @id @default(cuid())
-	providerId String?
-	createdAt  DateTime @default(now())
+	id         String     @id @default(cuid())
+	providerId String?    @unique
+	createdAt  DateTime   @default(now())
+	vibes      Vibe[]
+	playlists  Playlist[]
 }
 
 // Vibe model
 model Vibe {
-	id            String   @id @default(cuid())
+	id            String     @id @default(cuid())
 	userId        String?
+	user          User?      @relation(fields: [userId], references: [id])
 	inputText     String
 	normalizedKey String
 	specJson      Json
 	tracks        Json
-	createdAt     DateTime @default(now())
+	createdAt     DateTime   @default(now())
+	playlists     Playlist[]
+}
+
+model Playlist {
+	id          String   @id @default(cuid())
+	userId      String
+	user        User     @relation(fields: [userId], references: [id])
+	vibeId      String?
+	vibe        Vibe?    @relation(fields: [vibeId], references: [id])
+	spotifyId   String   @unique
+	spotifyUrl  String
+	name        String
+	trackCount  Int
+	createdAt   DateTime @default(now())
 }
 
 // Metric model

@@ -100,6 +100,11 @@ export const authOptions = {
     async session({ session, token }: { session: any; token: any }) {
       session.accessToken = token.accessToken;
       session.expiresAt = token.expiresAt;
+      session.user = {
+        email: token.email,
+        name: token.name,
+        spotifyId: token.sub,
+      };
       return session;
     },
   },

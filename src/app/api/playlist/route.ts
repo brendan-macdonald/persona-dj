@@ -1,8 +1,11 @@
 // playlist API route
 // POST {name, description, uris[]} => creates playlist and adds tracks
-import { getServerSession } from "next-auth"; // next auth session
-import { authOptions } from "../auth/[...nextauth]/route"; // next auth config
-import { sFetch, createPlaylist, addTracks } from "@/lib/spotify"; // Spotify helpers
+import { getServerSession } from "next-auth";
+import { authOptions } from "../auth/[...nextauth]/route";
+import { sFetch, createPlaylist, addTracks } from "@/lib/spotify";
+import { PrismaClient } from "@prisma/client";
+
+const prisma = new PrismaClient();
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -19,7 +22,7 @@ import { sFetch, createPlaylist, addTracks } from "@/lib/spotify"; // Spotify he
 export async function POST(req: Request): Promise<Response> {
   try {
     // parse request body
-    const { name, description, uris } = await req.json();
+    const { name, description, uris, vibeId } = await req.json();
     if (!name || !Array.isArray(uris) || uris.length === 0) {
       return Response.json(
         { error: "Missing name or uris[]" },
@@ -30,21 +33,36 @@ export async function POST(req: Request): Promise<Response> {
     // get session and check for accessToken
     const session = await getServerSession(authOptions);
     const token = session?.accessToken;
-    if (!token) {
+    const spotifyId = session?.user?.spotifyId;
+
+    if (!token || !spotifyId) {
       return Response.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     // get user id from /me
     const me = await sFetch(token, "/me");
-    const userId = me.id;
-    if (!userId) {
+    const spotifyUserId = me.id;
+    if (!spotifyUserId) {
       return Response.json({ error: "Could not get user id" }, { status: 500 });
     }
 
-    // create playlist
-    const playlist = await createPlaylist(token, userId, name, description);
+    // Find or create our User record
+    const user = await prisma.user.upsert({
+      where: { providerId: spotifyId },
+      update: {},
+      create: { providerId: spotifyId },
+    });
+
+    // create playlist on Spotify
+    const playlist = await createPlaylist(
+      token,
+      spotifyUserId,
+      name,
+      description
+    );
     const playlistId = playlist.id;
     const url = playlist.external_urls?.spotify;
+
     if (!playlistId) {
       return Response.json(
         { error: "Could not create playlist" },
@@ -52,11 +70,28 @@ export async function POST(req: Request): Promise<Response> {
       );
     }
 
-    // add tracks
+    // add tracks to Spotify playlist
     await addTracks(token, playlistId, uris);
+
+    // Save playlist to our database for history tracking
+    await prisma.playlist.create({
+      data: {
+        userId: user.id,
+        vibeId: vibeId || null,
+        spotifyId: playlistId,
+        spotifyUrl: url,
+        name: name,
+        trackCount: uris.length,
+      },
+    });
+
+    console.log(
+      `[Playlist] Created and saved: ${name} (${uris.length} tracks)`
+    );
 
     return Response.json({ playlistId, url });
   } catch (e: any) {
+    console.error("[Playlist] Error:", e);
     return Response.json(
       { error: "Server error", details: String(e) },
       { status: 500 }
