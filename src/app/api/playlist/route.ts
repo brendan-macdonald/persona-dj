@@ -35,7 +35,7 @@ export async function POST(req: Request): Promise<Response> {
     }
 
     // get user id from /me
-    const me = await sFetch(token, "me");
+    const me = await sFetch(token, "/me");
     const userId = me.id;
     if (!userId) {
       return Response.json({ error: "Could not get user id" }, { status: 500 });

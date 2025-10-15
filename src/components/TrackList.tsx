@@ -7,11 +7,15 @@ import { Track } from "../types";
  * tracks - Array of track objects to display.
  * selectedUris - Array of selected track URIs.
  * onSelectionChange - Callback to lift selected URIs up.
+ * onPostPlaylist - Callback to create playlist with selected tracks.
+ * postingPlaylist - Loading state for playlist creation.
  */
 interface TrackListProps {
   tracks: Track[];
   selectedUris: string[];
   onSelectionChange: (uris: string[]) => void;
+  onPostPlaylist: () => void;
+  postingPlaylist: boolean;
 }
 
 /**
@@ -22,6 +26,8 @@ export default function TrackList({
   tracks,
   selectedUris,
   onSelectionChange,
+  onPostPlaylist,
+  postingPlaylist,
 }: TrackListProps) {
   //local state for currenty previewed track
   const [previewing, setPreviewing] = useState<string | null>(null);
@@ -36,6 +42,28 @@ export default function TrackList({
 
   return (
     <div className="space-y-3">
+      {/* Header with selection count and Post Playlist button */}
+      <div className="flex justify-between items-center pb-3 border-b border-gray-800">
+        <span className="text-sm text-gray-400">
+          {selectedUris.length} of {tracks.length} selected
+        </span>
+        <button
+          onClick={onPostPlaylist}
+          disabled={selectedUris.length === 0 || postingPlaylist}
+          className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
+            selectedUris.length > 0 && !postingPlaylist
+              ? "bg-green-600 hover:bg-green-700 text-white"
+              : "bg-gray-700 text-gray-500 cursor-not-allowed"
+          }`}
+          type="button"
+        >
+          {postingPlaylist
+            ? "Posting..."
+            : `Post Playlist (${selectedUris.length})`}
+        </button>
+      </div>
+
+      {/* Track list */}
       {tracks.map((track) => (
         <div
           key={track.id}
