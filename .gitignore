@@ -1,6 +1,17 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
-# dependencies
+# Environment variables (secrets)
+.env
+.env.local
+.env*.local
+
+# Database files (actual data)
+*.db
+*.db-journal
+dev.db
+prisma/*.db
+
+# Dependencies
 node_modules/
 /.pnp
 .pnp.*
