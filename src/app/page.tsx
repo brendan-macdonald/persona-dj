@@ -14,6 +14,7 @@ export default function Home() {
   const [selectedUris, setSelectedUris] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [playlistGenerated, setPlaylistGenerated] = useState(false); // Track if playlist was generated
 
   // Handle VibeForm translation: set spec from child
   async function handleVibeTranslate(vibeInput: string) {
@@ -23,6 +24,7 @@ export default function Home() {
     setTracks([]);
     setSelectedUris([]);
     setVibe(vibeInput);
+    setPlaylistGenerated(false);
 
     try {
       const res = await fetch("/api/translate", {
@@ -45,9 +47,16 @@ export default function Home() {
     }
   }
 
-  // Handle SpecPreview change: call /api/discover
-  async function handleSpecChange(nextSpec: PlaylistSpec) {
+  // Handle spec change from SpecPreview (Update Specifications button)
+  function handleSpecChange(nextSpec: PlaylistSpec) {
     setSpec(nextSpec);
+    setPlaylistGenerated(false);
+  }
+
+  // Generate playlist: call /api/discover with current spec
+  async function handleGeneratePlaylist() {
+    if (!spec) return;
+
     setLoading(true);
     setError("");
     setTracks([]);
@@ -57,15 +66,19 @@ export default function Home() {
       const res = await fetch("/api/discover", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ spec: nextSpec, vibe: vibe }),
+        body: JSON.stringify({
+          spec: spec,
+          vibe: vibe,
+        }),
       });
 
       const data = await res.json();
 
       if (res.ok && data.tracks) {
         setTracks(data.tracks);
+        setPlaylistGenerated(true);
       } else {
-        setError(data.error || "Failed to get recommendations");
+        setError(data.error || "Failed to discover tracks");
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -89,7 +102,27 @@ export default function Home() {
           error={error}
         />
         {/* SpecPreview panel, shown after spec is set */}
-        {spec && <SpecPreview value={spec} onChange={handleSpecChange} />}
+        {spec && (
+          <>
+            <SpecPreview value={spec} onSpecChange={handleSpecChange} />
+            {/* Generate Playlist button */}
+            <button
+              onClick={handleGeneratePlaylist}
+              disabled={playlistGenerated || loading}
+              className={`w-full py-3 px-4 rounded-lg font-semibold transition-colors ${
+                playlistGenerated || loading
+                  ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                  : "bg-blue-600 text-white hover:bg-red-700"
+              }`}
+            >
+              {loading
+                ? "Generating..."
+                : playlistGenerated
+                ? "Playlist Generated"
+                : "Generate Playlist"}
+            </button>
+          </>
+        )}
       </section>
       {/* Right panel: TrackList and states */}
       <aside className="flex-1 bg-gray-950 border border-gray-800 rounded-lg p-6 overflow-auto min-h-[200px]">
