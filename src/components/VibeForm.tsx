@@ -17,6 +17,9 @@ const presets = [
   "focus study session",
 ];
 
+const MIN_VIBE_LENGTH = 10;
+const MAX_VIBE_LENGTH = 500;
+
 interface VibeFormProps {
   onTranslate: (vibe: string) => void;
   loading?: boolean;
@@ -30,15 +33,46 @@ export default function VibeForm({
 }: VibeFormProps) {
   // State for vibe input only
   const [vibe, setVibe] = useState("");
+  const [validationError, setValidationError] = useState("");
+
+  // Validation helper
+  function validateVibe(text: string): string {
+    if (text.trim().length < MIN_VIBE_LENGTH) {
+      return `Please enter at least ${MIN_VIBE_LENGTH} characters`;
+    }
+    if (text.length > MAX_VIBE_LENGTH) {
+      return `Maximum ${MAX_VIBE_LENGTH} characters allowed`;
+    }
+    return "";
+  }
+
+  // Handle vibe change with validation
+  function handleVibeChange(text: string) {
+    setVibe(text);
+    if (text.trim().length > 0) {
+      setValidationError(validateVibe(text));
+    } else {
+      setValidationError("");
+    }
+  }
 
   /**
    * Trigger the parent's translate handler
    */
   function handleTranslate() {
+    const error = validateVibe(vibe);
+    if (error) {
+      setValidationError(error);
+      return;
+    }
     if (vibe.trim()) {
       onTranslate(vibe);
     }
   }
+
+  const charCount = vibe.length;
+  const isValid =
+    vibe.trim().length >= MIN_VIBE_LENGTH && charCount <= MAX_VIBE_LENGTH;
 
   return (
     <div className="p-6 bg-white rounded-lg shadow-lg">
@@ -48,12 +82,36 @@ export default function VibeForm({
       </h2>
       {/* Vibe input textarea */}
       <textarea
-        className="w-full p-3 border border-gray-300 rounded-lg mb-3 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent resize-none text-gray-900 placeholder-gray-400"
+        className={`w-full p-3 border rounded-lg mb-2 focus:outline-none focus:ring-2 focus:border-transparent resize-none text-gray-900 placeholder-gray-400 ${
+          validationError
+            ? "border-red-300 focus:ring-red-600"
+            : "border-gray-300 focus:ring-blue-600"
+        }`}
         rows={4}
         value={vibe}
-        onChange={(e) => setVibe(e.target.value)}
+        onChange={(e) => handleVibeChange(e.target.value)}
         placeholder="Describe your vibe... (e.g., 'upbeat party music' or 'relaxing acoustic vibes')"
+        maxLength={MAX_VIBE_LENGTH}
       />
+
+      {/* Character count and validation */}
+      <div className="flex justify-between items-center mb-3 text-sm">
+        <span
+          className={`${
+            charCount > MAX_VIBE_LENGTH
+              ? "text-red-600 font-semibold"
+              : charCount >= MAX_VIBE_LENGTH - 50
+              ? "text-yellow-600"
+              : "text-gray-500"
+          }`}
+        >
+          {charCount}/{MAX_VIBE_LENGTH} characters
+        </span>
+        {validationError && (
+          <span className="text-red-600 font-semibold">{validationError}</span>
+        )}
+      </div>
+
       {/* Preset vibe buttons */}
       <div className="mb-4">
         <div className="text-sm font-semibold text-gray-700 mb-2">
@@ -76,7 +134,7 @@ export default function VibeForm({
       <button
         className="w-full py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed transition-colors shadow-sm"
         onClick={handleTranslate}
-        disabled={loading || !vibe.trim()}
+        disabled={loading || !isValid}
         type="button"
       >
         {loading ? "Translating..." : "Translate to Playlist"}

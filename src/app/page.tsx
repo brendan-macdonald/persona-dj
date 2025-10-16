@@ -4,10 +4,11 @@ import { useState } from "react";
 import VibeForm from "../components/VibeForm";
 import SpecPreview from "../components/SpecPreview";
 import TrackList from "../components/TrackList";
+import ErrorDisplay from "../components/ErrorDisplay";
 import { PlaylistSpec, Track } from "../types";
+import { fetchWithRetry, getErrorMessage } from "../lib/fetch-retry";
 
 export default function Home() {
-  // State for spec, tracks, selected uris, loading, error
   const [spec, setSpec] = useState<PlaylistSpec | null>(null);
   const [vibe, setVibe] = useState<string>("");
   const [tracks, setTracks] = useState<Track[]>([]);
@@ -16,13 +17,54 @@ export default function Home() {
   const [error, setError] = useState("");
   const [playlistGenerated, setPlaylistGenerated] = useState(false);
   const [playlistUrl, setPlaylistUrl] = useState<string | null>(null);
-  const [postingPlaylist, setPostingPlaylist] = useState(false);
   const [currentVibeId, setCurrentVibeId] = useState<string | null>(null);
 
-  // Handle VibeForm translation: set spec from child
-  async function handleVibeTranslate(vibeInput: string) {
+  // generic helper to handle all api calls with retry logic and error handling
+  async function apiCall(
+    url: string,
+    body: object,
+    onSuccess: (data: Record<string, unknown>) => void
+  ) {
     setLoading(true);
     setError("");
+
+    try {
+      const res = await fetchWithRetry(
+        url,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        },
+        {
+          maxRetries: 3,
+          onRetry: (attempt, max) =>
+            setError(`Retrying (${attempt}/${max})...`),
+        }
+      );
+
+      const contentType = res.headers.get("content-type");
+      if (!contentType?.includes("application/json")) {
+        throw new Error("Invalid server response");
+      }
+
+      const data = await res.json();
+      if (res.ok) {
+        onSuccess(data);
+        setError("");
+      } else {
+        setError(data.error || "Request failed");
+      }
+    } catch (e) {
+      console.error(`API call to ${url} failed:`, e);
+      setError(getErrorMessage(e));
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // user types vibe → translate to music specs via llm → save to db
+  async function handleVibeTranslate(vibeInput: string) {
     setSpec(null);
     setTracks([]);
     setSelectedUris([]);
@@ -30,121 +72,81 @@ export default function Home() {
     setPlaylistGenerated(false);
     setCurrentVibeId(null);
 
-    try {
-      const res = await fetch("/api/translate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ vibe: vibeInput }),
-      });
-
-      const data = await res.json();
-
-      if (res.ok && data.spec) {
-        setSpec(data.spec);
-        setCurrentVibeId(data.vibeId);
-      } else {
-        setError(data.error || "Failed to translate vibe");
-      }
-    } catch (e) {
-      console.error("Translation error:", e);
-      setError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setLoading(false);
-    }
+    await apiCall("/api/translate", { vibe: vibeInput }, (data) => {
+      setSpec(data.spec as PlaylistSpec);
+      setCurrentVibeId(data.vibeId as string);
+    });
   }
 
-  // Handle spec change from SpecPreview (Update Specifications button)
+  // user tweaks sliders → update spec → reset playlist state
   function handleSpecChange(nextSpec: PlaylistSpec) {
     setSpec(nextSpec);
     setPlaylistGenerated(false);
   }
 
-  // Generate playlist: call /api/discover with current spec
+  // spec ready → search spotify with llm-generated strategy → return ranked tracks
   async function handleGeneratePlaylist() {
     if (!spec) return;
-
-    setLoading(true);
-    setError("");
     setTracks([]);
     setSelectedUris([]);
 
-    try {
-      const res = await fetch("/api/discover", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          spec: spec,
-          vibe: vibe,
-        }),
-      });
-
-      const data = await res.json();
-
-      if (res.ok && data.tracks) {
-        setTracks(data.tracks);
-        setPlaylistGenerated(true);
-      } else {
-        setError(data.error || "Failed to discover tracks");
-      }
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setLoading(false);
-    }
+    await apiCall("/api/discover", { spec, vibe }, (data) => {
+      setTracks(data.tracks as Track[]);
+      setPlaylistGenerated(true);
+    });
   }
 
-  // Handle track selection change
+  // track checkboxes toggled → save selected uris
   function handleSelectionChange(uris: string[]) {
     setSelectedUris(uris);
   }
 
-  // Handle posting playlist to Spotify
+  // user clicks post playlist → create on spotify → save to db → return url
   async function handlePostPlaylist() {
-    // edge case - No tracks selected
     if (selectedUris.length === 0) {
       setError("Please select at least one track");
       return;
     }
 
-    setPostingPlaylist(true);
-    setError(""); // Clear previous errors
-
-    try {
-      const res = await fetch("/api/playlist", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: `${vibe} Playlist`,
-          description: "Generated by Persona DJ",
-          uris: selectedUris,
-          vibeId: currentVibeId,
-        }),
-      });
-
-      const data = await res.json();
-
-      if (res.ok) {
-        setPlaylistUrl(data.url); // Save playlist URL for display
+    await apiCall(
+      "/api/playlist",
+      {
+        name: `${vibe} Playlist`,
+        description: "Generated by Persona DJ",
+        uris: selectedUris,
+        vibeId: currentVibeId,
+      },
+      (data) => {
+        setPlaylistUrl(data.url as string);
         console.log("✅ Playlist created:", data.url);
-      } else {
-        setError(data.error || "Failed to create playlist");
       }
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setPostingPlaylist(false); // Always stop loading spinner
-    }
+    );
   }
 
   return (
     <div className="flex flex-col md:flex-row gap-8 min-h-[80vh] w-full max-w-6xl mx-auto py-12 px-4">
       {/* Left panel: VibeForm for vibe input and translation */}
       <section className="flex-1 flex flex-col gap-6">
-        <VibeForm
-          onTranslate={handleVibeTranslate}
-          loading={loading}
-          error={error}
-        />
+        <VibeForm onTranslate={handleVibeTranslate} loading={loading} />
+
+        {/* Error display with retry button */}
+        {error && (
+          <ErrorDisplay
+            type="error"
+            message={error}
+            onRetry={
+              error.includes("Retrying")
+                ? undefined
+                : () => {
+                    if (vibe && !spec) handleVibeTranslate(vibe);
+                    else if (spec && !playlistGenerated)
+                      handleGeneratePlaylist();
+                    else if (selectedUris.length > 0) handlePostPlaylist();
+                  }
+            }
+          />
+        )}
+
         {/* SpecPreview panel, shown after spec is set */}
         {spec && (
           <>
@@ -171,7 +173,6 @@ export default function Home() {
       {/* Right panel: TrackList and states */}
       <aside className="flex-1 bg-gray-950 border border-gray-800 rounded-lg p-6 overflow-auto min-h-[200px]">
         <h2 className="text-lg font-semibold mb-4 text-white">Tracks</h2>
-        {loading && <div className="text-blue-400 mb-4">Loading…</div>}
 
         {/* Success message when playlist is created */}
         {playlistUrl && (
@@ -196,7 +197,7 @@ export default function Home() {
             selectedUris={selectedUris}
             onSelectionChange={handleSelectionChange}
             onPostPlaylist={handlePostPlaylist}
-            postingPlaylist={postingPlaylist}
+            postingPlaylist={loading && selectedUris.length > 0}
           />
         )}
         {!loading && !error && tracks.length === 0 && (
