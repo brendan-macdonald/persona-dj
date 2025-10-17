@@ -1,7 +1,8 @@
 "use client";
 
 import { signIn, signOut, useSession } from "next-auth/react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import PlaylistHistory from "./PlaylistHistory";
 
 /**
@@ -11,11 +12,48 @@ import PlaylistHistory from "./PlaylistHistory";
 export default function LoginButton() {
   const { data: session, status } = useSession();
   const [showHistory, setShowHistory] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Show loading state while checking session
   if (status === "loading") {
     return <div className="text-gray-600 text-sm">Loading...</div>;
   }
+
+  // Modal component
+  const modal =
+    showHistory && mounted
+      ? createPortal(
+          <div
+            className="fixed inset-0 bg-black/40 backdrop-blur-md z-[999999] flex items-center justify-center p-4"
+            onClick={() => setShowHistory(false)}
+          >
+            <div
+              className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden flex flex-col border border-gray-200"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="bg-white border-b border-gray-200 p-6 flex justify-between items-center flex-shrink-0">
+                <h2 className="text-2xl font-bold text-gray-900">
+                  My Playlists
+                </h2>
+                <button
+                  onClick={() => setShowHistory(false)}
+                  className="text-gray-400 hover:text-gray-600 text-3xl font-bold w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
+                >
+                  ×
+                </button>
+              </div>
+              <div className="p-6 overflow-y-auto">
+                <PlaylistHistory />
+              </div>
+            </div>
+          </div>,
+          document.body
+        )
+      : null;
 
   // If logged in, show user info and logout button
   if (session?.user) {
@@ -38,34 +76,7 @@ export default function LoginButton() {
             Sign Out
           </button>
         </div>
-
-        {/* Playlist History Modal */}
-        {showHistory && (
-          <div
-            className="fixed inset-0 bg-white/30 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-            onClick={() => setShowHistory(false)}
-          >
-            <div
-              className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-y-auto border border-gray-200"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex justify-between items-center rounded-t-2xl">
-                <h2 className="text-2xl font-bold text-gray-900">
-                  My Playlists
-                </h2>
-                <button
-                  onClick={() => setShowHistory(false)}
-                  className="text-gray-400 hover:text-gray-600 text-3xl font-bold w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
-                >
-                  ×
-                </button>
-              </div>
-              <div className="p-6">
-                <PlaylistHistory />
-              </div>
-            </div>
-          </div>
-        )}
+        {modal}
       </>
     );
   }
