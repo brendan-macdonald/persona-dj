@@ -51,24 +51,24 @@ export default function PlaylistHistory() {
 
   if (loading) {
     return (
-      <div className="p-4 bg-gray-900 rounded-lg border border-gray-800">
-        <p className="text-gray-400">Loading your playlists...</p>
+      <div className="p-6 bg-gray-50 rounded-xl border border-gray-200">
+        <p className="text-gray-600">Loading your playlists...</p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="p-4 bg-red-900 rounded-lg border border-red-700">
-        <p className="text-red-200">Error: {error}</p>
+      <div className="p-6 bg-red-50 rounded-xl border border-red-200">
+        <p className="text-red-800">Error: {error}</p>
       </div>
     );
   }
 
   if (playlists.length === 0) {
     return (
-      <div className="p-4 bg-gray-900 rounded-lg border border-gray-800">
-        <p className="text-gray-400">No playlists created yet.</p>
+      <div className="p-6 bg-gray-50 rounded-xl border border-gray-200 text-center">
+        <p className="text-gray-700 font-medium">No playlists created yet.</p>
         <p className="text-sm text-gray-500 mt-2">
           Create your first playlist to see it here!
         </p>
@@ -77,26 +77,26 @@ export default function PlaylistHistory() {
   }
 
   return (
-    <div className="space-y-3">
-      <h3 className="text-lg font-semibold text-white mb-3">
+    <div className="space-y-4">
+      <p className="text-sm text-gray-600 mb-4">
         Your Playlists ({playlists.length})
-      </h3>
+      </p>
       {playlists.map((playlist) => (
         <div
           key={playlist.id}
-          className="p-4 bg-gray-900 rounded-lg border border-gray-800 hover:border-gray-700 transition-colors"
+          className="p-4 bg-white rounded-xl border border-gray-200 hover:border-indigo-300 hover:shadow-sm transition-all"
         >
-          <div className="flex justify-between items-start mb-2">
+          <div className="flex justify-between items-start gap-4">
             <div className="flex-1 min-w-0">
-              <h4 className="font-semibold text-white truncate">
+              <h4 className="font-semibold text-gray-900 truncate mb-1">
                 {playlist.name}
               </h4>
               {playlist.vibe && (
-                <p className="text-sm text-gray-400 truncate">
+                <p className="text-sm text-gray-600 truncate mb-2">
                   Vibe: &ldquo;{playlist.vibe.inputText}&rdquo;
                 </p>
               )}
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-gray-500">
                 {playlist.trackCount} tracks •{" "}
                 {new Date(playlist.createdAt).toLocaleDateString()}
               </p>
@@ -105,7 +105,7 @@ export default function PlaylistHistory() {
               href={playlist.spotifyUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="ml-3 px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-sm rounded-lg transition-colors flex-shrink-0"
+              className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold rounded-lg transition-colors flex-shrink-0"
             >
               Open →
             </a>
