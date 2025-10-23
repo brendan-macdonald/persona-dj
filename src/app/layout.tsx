@@ -14,10 +14,78 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-// Metadata for <head>
+// Metadata for <head> - Enhanced for SEO and social sharing
 export const metadata: Metadata = {
-  title: "Persona DJ",
-  description: "AI-powered DJ persona app",
+  title: {
+    default: "Persona DJ - AI-Powered Playlist Generator",
+    template: "%s | Persona DJ",
+  },
+  description:
+    "Transform your vibe into music. Describe your mood and let AI create the perfect Spotify playlist. Powered by OpenAI and Spotify.",
+  keywords: [
+    "AI playlist",
+    "Spotify",
+    "music generator",
+    "playlist creator",
+    "AI music",
+    "mood playlist",
+    "vibe to music",
+    "personalized playlists",
+    "OpenAI music",
+  ],
+  authors: [{ name: "Brendan MacDonald" }],
+  creator: "Brendan MacDonald",
+  publisher: "Persona DJ",
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
+  metadataBase: new URL(process.env.NEXTAUTH_URL || "http://localhost:3000"),
+  openGraph: {
+    title: "Persona DJ - AI-Powered Playlist Generator",
+    description:
+      "Transform your vibe into music. Describe your mood and let AI create the perfect Spotify playlist.",
+    url: "/",
+    siteName: "Persona DJ",
+    locale: "en_US",
+    type: "website",
+    images: [
+      {
+        url: "/og-image.png", // You'll need to create this
+        width: 1200,
+        height: 630,
+        alt: "Persona DJ - AI-Powered Playlist Generator",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Persona DJ - AI-Powered Playlist Generator",
+    description:
+      "Transform your vibe into music. Describe your mood and let AI create the perfect Spotify playlist.",
+    creator: "@yourtwitterhandle", // Update with your Twitter handle
+    images: ["/og-image.png"], // Same as OpenGraph image
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
+  icons: {
+    icon: [
+      { url: "/favicon.ico" },
+      { url: "/icon.png", type: "image/png", sizes: "32x32" },
+    ],
+    apple: [{ url: "/apple-icon.png", sizes: "180x180", type: "image/png" }],
+  },
+  manifest: "/manifest.json",
 };
 
 export default function RootLayout({

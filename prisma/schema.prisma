@@ -1,6 +1,7 @@
-// SQLite datasource and Prisma client generator
+// PostgreSQL datasource and Prisma client generator
+// Note: For production deployment on Vercel, PostgreSQL is required (SQLite won't work in serverless)
 datasource db {
-	provider = "sqlite"
+	provider = "postgresql"
 	url      = env("DATABASE_URL")
 }
 

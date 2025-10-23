@@ -1,0 +1,11 @@
+# Robots.txt for Persona DJ
+# Allow all crawlers to index the site
+
+User-agent: *
+Allow: /
+
+# Disallow crawling of API routes
+Disallow: /api/
+
+# Sitemap location (update with your actual domain after deployment)
+Sitemap: https://your-app.vercel.app/sitemap.xml

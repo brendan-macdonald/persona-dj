@@ -3,15 +3,21 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "../auth/[...nextauth]/route";
 import { sFetch, createPlaylist, addTracks } from "@/lib/spotify";
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
+import { rateLimit, getClientIp, rateLimitResponse } from "@/lib/rate-limit";
 
-const prisma = new PrismaClient();
+// Rate limiter: 10 playlists per minute per IP (stricter since this writes to Spotify)
+const limiter = rateLimit({
+  interval: 60 * 1000, // 1 minute
+  uniqueTokenPerInterval: 500,
+});
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 /**
  * @function POST
  * Handles POST requests to create a playlist and add tracks.
+ *   - checks rate limit
  *   - requires session with Spotify accessToken.
  *   - calls /me to get user id.
  *   - creates playlist with name/description.
@@ -20,6 +26,14 @@ const prisma = new PrismaClient();
  *   - handles errors cleanly.
  */
 export async function POST(req: Request): Promise<Response> {
+  // Rate limiting check
+  const ip = getClientIp(req);
+  const { success, remaining } = limiter.check(ip, 10); // 10 playlists per minute
+
+  if (!success) {
+    return rateLimitResponse(remaining, 60);
+  }
+
   try {
     // parse request body
     const { name, description, uris, vibeId } = await req.json();

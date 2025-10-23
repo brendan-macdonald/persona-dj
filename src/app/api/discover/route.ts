@@ -5,6 +5,13 @@ import { buildSearchQueries, discoverTracks } from "@/lib/discovery";
 import { vibeToSearchStrategy } from "@/lib/llm";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../auth/[...nextauth]/route";
+import { rateLimit, getClientIp, rateLimitResponse } from "@/lib/rate-limit";
+
+// Rate limiter: 30 requests per minute per IP (more generous for music discovery)
+const limiter = rateLimit({
+  interval: 60 * 1000, // 1 minute
+  uniqueTokenPerInterval: 500,
+});
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -12,16 +19,25 @@ import { authOptions } from "../auth/[...nextauth]/route";
  * @function POST /api/discover
  *
  * Implemented a Search-based discovery flow:
- *   1. validates spec with Zod
- *   2. requires session with Spotify accessToken
- *   3. uses LLM to translate vibe → search strategy
- *   4. builds multiple search queries (genre+keywords, artist+genre, etc.)
- *   5. executes searches in parallel
- *   6. deduplicates, filters, and ranks results
+ *   1. checks rate limit
+ *   2. validates spec with Zod
+ *   3. requires session with Spotify accessToken
+ *   4. uses LLM to translate vibe → search strategy
+ *   5. builds multiple search queries (genre+keywords, artist+genre, etc.)
+ *   6. executes searches in parallel
+ *   7. deduplicates, filters, and ranks results
  *   7. returns top 50 tracks
  */
 
 export async function POST(req: Request): Promise<Response> {
+  // Rate limiting check
+  const ip = getClientIp(req);
+  const { success, remaining } = limiter.check(ip, 30); // 30 requests per minute
+
+  if (!success) {
+    return rateLimitResponse(remaining, 60);
+  }
+
   try {
     // parse and validate request body
     const { spec, vibe } = await req.json();

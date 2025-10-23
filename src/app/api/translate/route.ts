@@ -2,20 +2,34 @@
 // POST {vibe} → returns {spec}
 import { normKey, getCache, setCache } from "@/lib/cache";
 import { vibeToSpec } from "@/lib/llm";
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../auth/[...nextauth]/route";
+import { rateLimit, getClientIp, rateLimitResponse } from "@/lib/rate-limit";
 
-const prisma = new PrismaClient();
+// Rate limiter: 20 requests per minute per IP
+const limiter = rateLimit({
+  interval: 60 * 1000, // 1 minute
+  uniqueTokenPerInterval: 500, // Max 500 unique IPs tracked
+});
 
 /**
  * @function POST
  * Handles POST requests to translate vibe to spec.
+ *   - Checks rate limit
  *   - Checks cache for normalized vibe key.
  *   - On miss, calls vibeToSpec, stores in cache, and persists to DB.
  *   - Returns spec as JSON, handles errors.
  */
 export async function POST(req: Request): Promise<Response> {
+  // Rate limiting check
+  const ip = getClientIp(req);
+  const { success, remaining } = limiter.check(ip, 20); // 20 requests per minute
+
+  if (!success) {
+    return rateLimitResponse(remaining, 60);
+  }
+
   try {
     const { vibe } = await req.json();
     if (!vibe || typeof vibe !== "string") {
