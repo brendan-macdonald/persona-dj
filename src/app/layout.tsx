@@ -46,13 +46,13 @@ export const metadata: Metadata = {
     title: "Persona DJ - AI-Powered Playlist Generator",
     description:
       "Transform your vibe into music. Describe your mood and let AI create the perfect Spotify playlist.",
-    url: "/",
+    url: "https://persona-dj.vercel.app",
     siteName: "Persona DJ",
     locale: "en_US",
     type: "website",
     images: [
       {
-        url: "/og-image.png",
+        url: "https://persona-dj.vercel.app/og-image.png",
         width: 1200,
         height: 630,
         alt: "Persona DJ - AI-Powered Playlist Generator",
@@ -64,7 +64,7 @@ export const metadata: Metadata = {
     title: "Persona DJ - AI-Powered Playlist Generator",
     description:
       "Transform your vibe into music. Describe your mood and let AI create the perfect Spotify playlist.",
-    images: ["/og-image.png"], // Same as OpenGraph image
+    images: ["https://persona-dj.vercel.app/og-image.png"],
   },
   robots: {
     index: true,
