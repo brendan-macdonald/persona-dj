@@ -27,7 +27,7 @@ Transform natural language descriptions into perfectly curated Spotify playlists
 
 ## Live Demo
 
-🔗 **[Try Persona DJ](#)** _(Pending deployment)_
+🔗 **[Try Persona DJ](https://persona-dj.vercel.app)** - Transform your vibe into music right now!
 
 ---
 
@@ -44,11 +44,11 @@ Transform natural language descriptions into perfectly curated Spotify playlists
 
 ### **Backend & APIs**
 
-- **[OpenAI API](https://openai.com/)** - GPT-3.5-turbo for vibe-to-playlist translation
+- **[OpenAI API](https://openai.com/)** - GPT-4o-mini for vibe-to-playlist translation
 - **[Spotify Web API](https://developer.spotify.com/documentation/web-api)** - Track search and playlist creation
 - **[NextAuth.js](https://next-auth.js.org/)** - Spotify OAuth authentication with token refresh
 - **[Prisma](https://www.prisma.io/)** - Type-safe database ORM
-- **SQLite/PostgreSQL** - Database (SQLite for dev, PostgreSQL for production)
+- **PostgreSQL** - Production database (Vercel Postgres)
 
 ### **State & Data Management**
 
@@ -86,7 +86,7 @@ User Input → LLM Translation → Spec Editor → Spotify Search → Playlist C
 
 - Natural language understanding far exceeds rule-based systems
 - Structured JSON output via function calling ensures type safety
-- Cost-effective at ~$0.002 per request
+- Cost-effective with GPT-4o-mini at ~$0.0001 per request
 
 **Why Prisma?**
 
@@ -354,31 +354,32 @@ export default function VibeForm() {
 
 ## Deployment
 
-### Production Checklist
+**Status: ✅ Live in Production**
 
-1. **Switch to PostgreSQL** (SQLite won't work on Vercel)
+Deployed on **[Vercel](https://vercel.com)** with:
 
-```prisma
-datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
-}
-```
+- PostgreSQL database (via Vercel Postgres)
+- Edge Runtime for API routes
+- Automatic deployments from `main` branch
+- Environment variables secured in Vercel dashboard
 
-2. **Set environment variables** in Vercel dashboard
-3. **Update Spotify redirect URI** to production URL
-4. **Run migrations**: `npx prisma migrate deploy`
-
-### Deploy to Vercel
+### Deploy Your Own
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/brendan-macdonald/persona-dj)
 
-Or manually:
+**Quick Setup:**
 
-```bash
-npm install -g vercel
-vercel --prod
-```
+1. Click the deploy button above
+2. Add environment variables (see `.env.local` template)
+3. Update Spotify redirect URI to your Vercel URL
+4. Run database migrations: `npx prisma migrate deploy`
+
+**Production Environment:**
+
+- Uses PostgreSQL (required for Vercel)
+- All API routes are optimized for Edge Runtime
+- Social sharing images (Open Graph) included
+- SEO metadata configured
 
 ---
 
