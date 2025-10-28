@@ -52,7 +52,7 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: "/og-image.png", // You'll need to create this
+        url: "/og-image.png",
         width: 1200,
         height: 630,
         alt: "Persona DJ - AI-Powered Playlist Generator",
@@ -64,7 +64,6 @@ export const metadata: Metadata = {
     title: "Persona DJ - AI-Powered Playlist Generator",
     description:
       "Transform your vibe into music. Describe your mood and let AI create the perfect Spotify playlist.",
-    creator: "@yourtwitterhandle", // Update with your Twitter handle
     images: ["/og-image.png"], // Same as OpenGraph image
   },
   robots: {
